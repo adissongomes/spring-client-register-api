@@ -108,6 +108,25 @@ class ClientServiceTests {
         assertNotEquals(clientAntigo.getCpf(), argumentCaptor.getValue().getCpf());
     }
 
+    @Test
+    public void removerClientTest() {
+        Mockito.when(repository.findById(anyLong())).thenReturn(Optional.of(clientFromModel(criaClientModel())));
+        long id = 1L;
+        service.remover(id);
+        Mockito.verify(repository).deleteById(id);
+    }
+
+    @Test
+    public void removerClientIdNuloTest() {
+        assertThrows(IllegalArgumentException.class, () -> service.remover(null));
+    }
+
+    @Test
+    public void falhaRemoverClientTest() {
+        Mockito.when(repository.findById(anyLong())).thenThrow(new DataRetrievalFailureException(""));
+        assertThrows(FalhaOperacaoException.class, () -> service.remover(1L));
+    }
+
     private ClientModel criaClientModel() {
         ClientModel client = new ClientModel();
         client.setCpf("12312312312");

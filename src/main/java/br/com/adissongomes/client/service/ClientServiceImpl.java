@@ -122,14 +122,15 @@ public class ClientServiceImpl implements ClientService {
             LOGGER.info("Atualizando cliente {}" + id);
             if (repository.findById(id).isPresent()) {
                 repository.deleteById(id);
+            } else {
+                throw new ClientInexistenteException("Cliente de id " + id + " nao cadastrado");
             }
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             String msg = "Erro ao remover cliente " + id;
             LOGGER.error(msg, e);
             throw new FalhaOperacaoException(msg, e);
         }
 
-        throw new ClientInexistenteException("Cliente de id " + id + " nao cadastrado");
     }
 
     @Override
