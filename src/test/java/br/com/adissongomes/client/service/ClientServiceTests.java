@@ -136,11 +136,11 @@ class ClientServiceTests {
         List<Client> clients = Arrays.asList(client, client, client, client, client);
         PageRequest pageable = PageRequest.of(1, clients.size());
         Page<Client> page = new PageImpl<>(clients, pageable, 1);
-        Mockito.when(repository.findByCpfLikeOrNomeLike(anyString(), isNull(), any(Pageable.class))).thenReturn(page);
+        Mockito.when(repository.findAll(any(Example.class), any(Pageable.class))).thenReturn(page);
 
         Page<ClientModel> encontrados = service.busca("1231231", null, 1, 10);
 
-        Mockito.verify(repository).findByCpfLikeOrNomeLike(anyString(), isNull(), any(Pageable.class));
+        Mockito.verify(repository).findAll(any(Example.class), any(Pageable.class));
         assertEquals(5, encontrados.getNumberOfElements());
     }
 

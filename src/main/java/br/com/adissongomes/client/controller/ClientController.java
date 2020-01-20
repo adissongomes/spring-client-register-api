@@ -13,7 +13,7 @@ import org.springframework.web.util.UriComponents;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("clients")
+@RequestMapping("/clients")
 public class ClientController {
 
     private ClientService service;
@@ -39,12 +39,12 @@ public class ClientController {
     @GetMapping
     public ResponseEntity<?> busca(@RequestParam(name="nome", required = false) String nome,
                                    @RequestParam(name="cpf", required = false) String cpf,
-                                   @RequestParam(name="size", defaultValue = "10") int quantidade,
-                                   @RequestParam(name="cpf", defaultValue = "1") int pagina) {
-        Page<ClientModel> paginaResultado = service.busca(nome, cpf, pagina, quantidade);
+                                   @RequestParam(name="tamanho", defaultValue = "10") int quantidade,
+                                   @RequestParam(name="pagina", defaultValue = "1") int pagina) {
+        Page<ClientModel> paginaResultado = service.busca(nome, cpf, pagina - 1, quantidade);
         PaginaResponse response = new PaginaResponse();
         response.setClients(paginaResultado.getContent());
-        response.setPagina(paginaResultado.getNumber());
+        response.setPagina(paginaResultado.getNumber() + 1);
         response.setQuantidadeItensPagina(paginaResultado.getNumberOfElements());
         response.setTotalPaginas(paginaResultado.getTotalPages());
         return ResponseEntity.ok(response);

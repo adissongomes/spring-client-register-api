@@ -5,3 +5,4 @@ spring:
     password: platformbuilders
   jpa:
     generate-ddl: true
+    show-sql: true
