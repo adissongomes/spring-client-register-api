@@ -10,8 +10,10 @@ import br.com.adissongomes.client.service.model.ClientUpdate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.validation.Valid;
 import java.time.LocalDate;
@@ -27,18 +29,17 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public ClientModel salvar(@Valid ClientModel client) {
-        if (repository.findByCpf(client.getCpf()).isPresent())
-            throw new ClientExistenteException("Cliente de CPF " + client.getCpf() + " ja cadastrado");
-        Client novoClient = null;
         try {
+            if (repository.findByCpf(client.getCpf()).isPresent())
+                throw new ClientExistenteException("Cliente de CPF " + client.getCpf() + " ja cadastrado");
             LOGGER.info("Criando novo cliente {}", client.getNome());
-            novoClient = repository.save(toClient(client));
-        } catch (Exception e) {
-            String msg = "Erro ao criar novo cliente " + client.getId();
+            Client novoClient = repository.save(toClient(client));
+            return toModel(novoClient);
+        } catch (DataAccessException e) {
+            String msg = "Erro ao criar novo cliente " + client.getNome();
             LOGGER.error(msg, e);
             throw new FalhaOperacaoException(msg, e);
         }
-        return toModel(novoClient);
     }
 
     private Client toClient(ClientModel model) {
@@ -62,33 +63,73 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public boolean atualizar(ClientModel client) {
-        if (client.getId() == null)
+    public void atualizar(ClientModel client) {
+        if (client == null || client.getId() == null)
             throw new IllegalArgumentException("Id do cliente necessario");
 
         try {
             LOGGER.info("Atualizando cliente {}" + client.getId());
             if (repository.findById(client.getId()).isPresent()) {
                 repository.save(toClient(client));
-                return true;
+            } else {
+                throw new ClientInexistenteException("Cliente de id " + client.getId() + " nao cadastrado");
             }
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             String msg = "Erro ao atualizar cliente " + client.getId();
             LOGGER.error(msg, e);
             throw new FalhaOperacaoException(msg, e);
         }
 
-        throw new ClientInexistenteException("Cliente de id " + client.getId() + " nao cadastrado");
+
     }
 
     @Override
-    public boolean atualizacaoParcial(Long id, ClientUpdate client) {
-        return false;
+    public void atualizacaoParcial(Long id, ClientUpdate parcial) {
+        if (id == null)
+            throw new IllegalArgumentException("Id do cliente necessario");
+
+        try {
+            LOGGER.info("Atualizando cliente {}" + id);
+            Optional<Client> optional = repository.findById(id);
+            if (optional.isPresent()) {
+                Client atualizado = Client.from(optional.get());
+                atualizado.setId(id);
+                if (StringUtils.hasText(parcial.getCpf()))
+                    atualizado.setCpf(parcial.getCpf());
+                if (StringUtils.hasText(parcial.getNome()))
+                    atualizado.setNome(parcial.getNome());
+                if (parcial.getDataNascimento() != null)
+                    atualizado.setDataNascimento(parcial.getDataNascimento());
+                repository.save(atualizado);
+            } else {
+                throw new ClientInexistenteException("Cliente de id " + id + " nao cadastrado");
+            }
+        } catch (DataAccessException e) {
+            String msg = "Erro ao atualizar cliente " + id;
+            LOGGER.error(msg, e);
+            throw new FalhaOperacaoException(msg, e);
+        }
+
+
     }
 
     @Override
-    public boolean remover(Long id) {
-        return false;
+    public void remover(Long id) {
+        if (id == null)
+            throw new IllegalArgumentException("Id do cliente necessario");
+
+        try {
+            LOGGER.info("Atualizando cliente {}" + id);
+            if (repository.findById(id).isPresent()) {
+                repository.deleteById(id);
+            }
+        } catch (Exception e) {
+            String msg = "Erro ao remover cliente " + id;
+            LOGGER.error(msg, e);
+            throw new FalhaOperacaoException(msg, e);
+        }
+
+        throw new ClientInexistenteException("Cliente de id " + id + " nao cadastrado");
     }
 
     @Override

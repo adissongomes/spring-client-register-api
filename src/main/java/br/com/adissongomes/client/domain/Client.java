@@ -70,4 +70,12 @@ public class Client {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+    public static Client from(Client client) {
+        Client copia = new Client();
+        copia.setCpf(client.cpf);
+        copia.setDataNascimento(LocalDate.from(client.dataNascimento));
+        copia.setNome(client.nome);
+        return copia;
+    }
 }

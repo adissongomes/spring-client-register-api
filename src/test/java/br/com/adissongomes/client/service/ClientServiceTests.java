@@ -2,17 +2,18 @@ package br.com.adissongomes.client.service;
 
 import br.com.adissongomes.client.domain.Client;
 import br.com.adissongomes.client.exceptions.ClientExistenteException;
+import br.com.adissongomes.client.exceptions.ClientInexistenteException;
+import br.com.adissongomes.client.exceptions.FalhaOperacaoException;
 import br.com.adissongomes.client.repository.ClientRepository;
 import br.com.adissongomes.client.service.model.ClientModel;
 import br.com.adissongomes.client.service.model.ClientUpdate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataRetrievalFailureException;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -43,6 +44,14 @@ class ClientServiceTests {
     }
 
     @Test
+    public void falhaNovoClientTest() {
+        ClientModel model = criaClientModel();
+        Mockito.when(repository.save(ArgumentMatchers.any(Client.class)))
+                .thenThrow(new DataRetrievalFailureException(""));
+        assertThrows(FalhaOperacaoException.class, () -> service.salvar(model));
+    }
+
+    @Test
     public void conflitoNovoClientTest() {
         ClientModel model = criaClientModel();
         Mockito.when(repository.findByCpf(anyString())).thenReturn(Optional.of(clientFromModel(model)));
@@ -61,6 +70,44 @@ class ClientServiceTests {
         Mockito.verify(repository).save(any(Client.class));
     }
 
+    @Test
+    public void atualizarClientInexistenteTest() {
+        ClientModel model = criaClientModel();
+        model.setId(1L);
+        Mockito.when(repository.findById(model.getId())).thenReturn(Optional.empty());
+        assertThrows(ClientInexistenteException.class, () -> service.atualizar(model));
+    }
+
+    @Test
+    public void atualizarClientSemIdTest() {
+        ClientModel model = criaClientModel();
+        assertThrows(IllegalArgumentException.class, () -> service.atualizar(model));
+    }
+
+    @Test
+    public void falhaAtualizarClientTest() {
+        ClientModel model = criaClientModel();
+        model.setId(1L);
+        Mockito.when(repository.findById(anyLong())).thenThrow(new DataRetrievalFailureException(""));
+        assertThrows(FalhaOperacaoException.class, () -> service.atualizar(model));
+    }
+
+    @Test
+    public void atualizaParcialClientTest() {
+        ClientUpdate clienteAtualizado = criaClientUpdate();
+        long id = 1L;
+        Client clientAntigo = clientFromModel(criaClientModel());
+        Mockito.when(repository.findById(id)).thenReturn(Optional.of(clientAntigo));
+
+        service.atualizacaoParcial(id, clienteAtualizado);
+
+        ArgumentCaptor<Client> argumentCaptor = ArgumentCaptor.forClass(Client.class);
+        Mockito.verify(repository).findById(anyLong());
+        Mockito.verify(repository).save(argumentCaptor.capture());
+        assertEquals(clientAntigo.getNome(), argumentCaptor.getValue().getNome());
+        assertNotEquals(clientAntigo.getCpf(), argumentCaptor.getValue().getCpf());
+    }
+
     private ClientModel criaClientModel() {
         ClientModel client = new ClientModel();
         client.setCpf("12312312312");
@@ -71,9 +118,7 @@ class ClientServiceTests {
 
     private ClientUpdate criaClientUpdate() {
         ClientUpdate client = new ClientUpdate();
-        client.setCpf("12312312312");
-        client.setDataNascimento(LocalDate.now().minus(18, ChronoUnit.YEARS));
-        client.setNome("Client 123");
+        client.setCpf("11122211122");
         return client;
     }
 
