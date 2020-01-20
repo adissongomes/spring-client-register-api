@@ -14,9 +14,12 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -125,6 +128,35 @@ class ClientServiceTests {
     public void falhaRemoverClientTest() {
         Mockito.when(repository.findById(anyLong())).thenThrow(new DataRetrievalFailureException(""));
         assertThrows(FalhaOperacaoException.class, () -> service.remover(1L));
+    }
+
+    @Test
+    public void buscaPaginadaCPF() {
+        Client client = clientFromModel(criaClientModel());
+        List<Client> clients = Arrays.asList(client, client, client, client, client);
+        PageRequest pageable = PageRequest.of(1, clients.size());
+        Page<Client> page = new PageImpl<>(clients, pageable, 1);
+        Mockito.when(repository.findByCpfLikeOrNomeLike(anyString(), isNull(), any(Pageable.class))).thenReturn(page);
+
+        Page<ClientModel> encontrados = service.busca("1231231", null, 1, 10);
+
+        Mockito.verify(repository).findByCpfLikeOrNomeLike(anyString(), isNull(), any(Pageable.class));
+        assertEquals(5, encontrados.getNumberOfElements());
+    }
+
+    @Test
+    public void buscaPaginadaGeral() {
+        Client client = clientFromModel(criaClientModel());
+        List<Client> clients = Arrays.asList(client, client, client, client, client,
+                client, client, client, client, client);
+        PageRequest pageable = PageRequest.of(1, clients.size());
+        Page<Client> page = new PageImpl<>(clients, pageable, 1);
+        Mockito.when(repository.findAll(any(Pageable.class))).thenReturn(page);
+
+        Page<ClientModel> encontrados = service.busca(null, null, 1, 10);
+
+        Mockito.verify(repository).findAll(any(Pageable.class));
+        assertEquals(10, encontrados.getNumberOfElements());
     }
 
     private ClientModel criaClientModel() {

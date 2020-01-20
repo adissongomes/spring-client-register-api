@@ -11,6 +11,6 @@ public interface ClientService {
     void atualizacaoParcial(Long id, ClientUpdate client);
     void remover(Long id);
     ClientModel buscaPorId(Long id);
-    Page<ClientModel> busca(String nome, String cpf);
+    Page<ClientModel> busca(String nome, String cpf, int page, int size);
 
 }

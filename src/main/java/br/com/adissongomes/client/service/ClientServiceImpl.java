@@ -12,12 +12,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.validation.Valid;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.function.Function;
 
 @Service
 public class ClientServiceImpl implements ClientService {
@@ -139,7 +141,23 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public Page<ClientModel> busca(String nome, String cpf) {
-        return null;
+    public Page<ClientModel> busca(String cpf, String nome, int page, int size) {
+        try {
+            Function<Client, ClientModel> mapClientModel = c -> toModel(c);
+            if (!StringUtils.hasText(nome) && !StringUtils.hasText(cpf)) {
+                return repository.findAll(PageRequest.of(page, size))
+                        .map(mapClientModel);
+            }
+            if (StringUtils.hasText(cpf))
+                cpf += "%";
+            if (StringUtils.hasText(nome))
+                nome += "%";
+            return repository.findByCpfLikeOrNomeLike(cpf, nome, PageRequest.of(page, size))
+                    .map(mapClientModel);
+        } catch (DataAccessException e) {
+            String msg = "Erro ao obter clientes em busca por cpf '" + cpf + "' nome '" + nome + "'";
+            LOGGER.error(msg, e);
+            throw new FalhaOperacaoException(msg, e);
+        }
     }
 }
