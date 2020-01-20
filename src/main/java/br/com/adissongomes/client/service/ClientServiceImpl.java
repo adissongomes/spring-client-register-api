@@ -137,7 +137,8 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public ClientModel buscaPorId(Long id) {
-        return null;
+        return toModel(repository.findById(id)
+                .orElseThrow(() -> new ClientInexistenteException("Cliente " + id + " nao enontrado")));
     }
 
     @Override

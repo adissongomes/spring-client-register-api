@@ -22,7 +22,6 @@ public class Client {
     @Column(nullable = false, unique = true)
     private String cpf;
 
-    @Temporal(TemporalType.DATE)
     @Column(nullable = false)
     private LocalDate dataNascimento;
 

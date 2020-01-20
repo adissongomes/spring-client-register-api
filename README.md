@@ -20,3 +20,6 @@ __Windows__: `gradlew.bat bootJar`
 Para executar o projeto basta executar
 
 `docker-compose up -d`
+
+> Obs: _necessário efetuar o build da aplicação 
+> antes de executar o docker-compose_
