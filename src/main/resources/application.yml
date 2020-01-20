@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/clients
+    username: builders
+    password: platformbuilders
+  jpa:
+    generate-ddl: true
