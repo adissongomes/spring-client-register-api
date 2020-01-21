@@ -96,6 +96,20 @@ class ClientServiceTests {
     }
 
     @Test
+    public void conflitoAtualizarCpfClientTest() {
+        String cpf = "11122233311";
+        ClientModel model = criaClientModel();
+        model.setId(1L);
+        model.setCpf(cpf);
+        Client byCpf = clientFromModel(model);
+        byCpf.setCpf(cpf);
+        Mockito.when(repository.findById(model.getId())).thenReturn(Optional.of(clientFromModel(criaClientModel())));
+        Mockito.when(repository.findByCpf(cpf)).thenReturn(Optional.of(byCpf));
+
+        assertThrows(ClientExistenteException.class, () -> service.atualizar(model));
+    }
+
+    @Test
     public void atualizaParcialClientTest() {
         ClientUpdate clienteAtualizado = criaClientUpdate();
         long id = 1L;

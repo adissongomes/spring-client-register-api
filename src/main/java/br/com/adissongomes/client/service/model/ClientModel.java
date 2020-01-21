@@ -2,6 +2,7 @@ package br.com.adissongomes.client.service.model;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.time.LocalDate;
 import java.util.Objects;
 
@@ -10,6 +11,7 @@ public class ClientModel {
     @NotBlank
     private String nome;
     @NotBlank
+    @Pattern(regexp = "\\d{11,14}")
     private String cpf;
     @NotNull
     private LocalDate dataNascimento;

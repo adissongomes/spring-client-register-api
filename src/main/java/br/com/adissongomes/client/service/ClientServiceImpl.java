@@ -76,7 +76,8 @@ public class ClientServiceImpl implements ClientService {
 
         try {
             LOGGER.info("Atualizando cliente {}" + client.getId());
-            if (repository.findById(client.getId()).isPresent()) {
+            Optional<Client> optional = getClientAntigo(client.getId(), client.getCpf());
+            if (optional.isPresent()) {
                 repository.save(toClient(client));
             } else {
                 throw new ClientInexistenteException("Cliente de id " + client.getId() + " nao cadastrado");
@@ -86,8 +87,6 @@ public class ClientServiceImpl implements ClientService {
             LOGGER.error(msg, e);
             throw new FalhaOperacaoException(msg, e);
         }
-
-
     }
 
     @Override
@@ -97,7 +96,7 @@ public class ClientServiceImpl implements ClientService {
 
         try {
             LOGGER.info("Atualizando cliente {}" + id);
-            Optional<Client> optional = repository.findById(id);
+            Optional<Client> optional = getClientAntigo(id, parcial.getCpf());
             if (optional.isPresent()) {
                 Client atualizado = Client.from(optional.get());
                 atualizado.setId(id);
@@ -116,8 +115,21 @@ public class ClientServiceImpl implements ClientService {
             LOGGER.error(msg, e);
             throw new FalhaOperacaoException(msg, e);
         }
+    }
 
-
+    private Optional<Client> getClientAntigo(long id, String novoCpf) {
+        Optional<Client> optional = repository.findById(id);
+        if (optional.isPresent()) {
+            Client antigo = optional.get();
+            if (novoCpf != null && !antigo.getCpf().equals(novoCpf)) {
+                Optional<Client> byCpf = repository.findByCpf(novoCpf);
+                if (byCpf.isPresent())
+                    throw new ClientExistenteException("Ja existe cliente (id=" +
+                            byCpf.get().getId() + ") com CPF " +
+                            novoCpf + " cadastrado");
+            }
+        }
+        return optional;
     }
 
     @Override
@@ -147,10 +159,10 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public Page<ClientModel> busca(String nome, String cpf, int page, int size) {
+    public Page<ClientModel> busca(String nome, String novoCpf, int page, int size) {
         try {
             Function<Client, ClientModel> mapClientModel = c -> toModel(c);
-            if (!StringUtils.hasText(nome) && !StringUtils.hasText(cpf)) {
+            if (!StringUtils.hasText(nome) && !StringUtils.hasText(novoCpf)) {
                 return repository.findAll(PageRequest.of(page, size))
                         .map(mapClientModel);
             }
@@ -161,10 +173,10 @@ public class ClientServiceImpl implements ClientService {
                     .withIgnoreNullValues();
             Client c = new Client();
             c.setNome(nome);
-            c.setCpf(cpf);
+            c.setCpf(novoCpf);
             return repository.findAll(Example.of(c, matcher), PageRequest.of(page, size)).map(mapClientModel);
         } catch (DataAccessException e) {
-            String msg = "Erro ao obter clientes em busca por cpf '" + cpf + "' nome '" + nome + "'";
+            String msg = "Erro ao obter clientes em busca por cpf '" + novoCpf + "' nome '" + nome + "'";
             LOGGER.error(msg, e);
             throw new FalhaOperacaoException(msg, e);
         }
